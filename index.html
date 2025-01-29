@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Duck Hunt Marsh</title>
+  <style>
+    /* Container to limit the width to 800px */
+    .game-container {
+      max-width: 800px;
+      margin: 0 auto;
+      border: 2px solid #555;
+      position: relative;
+    }
+
+    /* Canvas fills the container width */
+    canvas {
+      display: block;
+      width: 100%;
+      /* Responsive to container */
+      height: auto;
+      cursor: none;
+      /* Hide the default cursor so we can draw a crosshair */
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: #eee;
+      font-family: sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="game-container">
+    <canvas id="gameCanvas"></canvas>
+  </div>
+
+  <script>
+    /** 
+     * Gun class to handle aiming and firing.
+     * In a more complex game, this might handle the gun's state, 
+     * ammo count, recoil, etc.
+     */
+    class Gun {
+      constructor() {
+        this.x = 0;
+        this.y = 0;
+        this.isFiring = false;
+        this.flashTimer = 0;
+        this.flashDuration = 200; // milliseconds
+      }
+
+      update(deltaTime) {
+        // If firing, count down the flash timer
+        if (this.isFiring) {
+          this.flashTimer -= deltaTime;
+          if (this.flashTimer <= 0) {
+            this.isFiring = false;
+            this.flashTimer = 0;
+          }
+        }
+      }
+
+      fire() {
+        // Start flash
+        this.isFiring = true;
+        this.flashTimer = this.flashDuration;
+      }
+
+      setPosition(x, y) {
+        this.x = x;
+        this.y = y;
+      }
+
+      draw(ctx) {
+        // Draw crosshair
+        // If firing, crosshair color changes (e.g., red flash)
+        ctx.save();
+        ctx.strokeStyle = this.isFiring ? "red" : "black";
+        ctx.lineWidth = 2;
+
+        // Lines forming a crosshair
+        const size = 20;
+        ctx.beginPath();
+        // Horizontal line
+        ctx.moveTo(this.x - size, this.y);
+        ctx.lineTo(this.x + size, this.y);
+        // Vertical line
+        ctx.moveTo(this.x, this.y - size);
+        ctx.lineTo(this.x, this.y + size);
+        ctx.stroke();
+
+        // Small circle at center
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 5, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    }
+
+    /** 
+     * Shell class (placeholder).
+     * In a bigger game, this would handle trajectories, collisions, etc.
+     */
+    class Shell {
+      constructor() {
+        // Not used in this minimal example
+      }
+      update(deltaTime) {
+        // ...
+      }
+      draw(ctx) {
+        // ...
+      }
+    }
+
+    /** 
+     * Duck class (placeholder).
+     * For demonstration, we won't animate ducks, but you can expand this.
+     */
+    class Duck {
+      constructor() {
+        // ...
+      }
+      update(deltaTime) {
+        // ...
+      }
+      draw(ctx) {
+        // ...
+      }
+    }
+
+    /** 
+     * Main game object to organize logic:
+     * - Manages the canvas, input events, draws background, etc.
+     */
+    class Game {
+      constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext("2d");
+
+        // Keep track of last timestamp to compute deltaTime
+        this.lastTime = 0;
+
+        // Create main entities
+        this.gun = new Gun();
+        this.shells = [];
+        this.ducks = [];
+
+        // Mouse event listeners
+        canvas.addEventListener("mousemove", (e) => this.onMouseMove(e));
+        canvas.addEventListener("mousedown", (e) => this.onMouseDown(e));
+
+        // Resize the canvas to match the container
+        this.resizeCanvas();
+        window.addEventListener("resize", () => this.resizeCanvas());
+
+        // Start the loop
+        requestAnimationFrame((time) => this.gameLoop(time));
+      }
+
+      resizeCanvas() {
+        // Match canvas resolution to the displayed size
+        // This helps keep drawings sharp at different sizes
+        const rect = this.canvas.getBoundingClientRect();
+        this.canvas.width = rect.width;
+        this.canvas.height = rect.height;
+      }
+
+      onMouseMove(e) {
+        // Get mouse position relative to the canvas
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        this.gun.setPosition(x, y);
+      }
+
+      onMouseDown(e) {
+        // Fire the gun (trigger the crosshair flash)
+        this.gun.fire();
+      }
+
+      // The main loop using requestAnimationFrame
+      gameLoop(timestamp) {
+        // Calculate time elapsed since last frame
+        const deltaTime = timestamp - this.lastTime;
+        this.lastTime = timestamp;
+
+        this.update(deltaTime);
+        this.draw();
+
+        requestAnimationFrame((time) => this.gameLoop(time));
+      }
+
+      update(deltaTime) {
+        // Update game entities
+        this.gun.update(deltaTime);
+
+        // Shells, ducks, etc. if needed:
+        this.shells.forEach(shell => shell.update(deltaTime));
+        this.ducks.forEach(duck => duck.update(deltaTime));
+      }
+
+      draw() {
+        // Clear the canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw background (sky gradient + grass)
+        this.drawBackground();
+
+        // Draw trees (simple placeholders)
+        this.drawTrees();
+
+        // Draw Ducks
+        this.ducks.forEach(duck => duck.draw(this.ctx));
+
+        // Draw Gun crosshair
+        this.gun.draw(this.ctx);
+      }
+
+      drawBackground() {
+        const { width, height } = this.canvas;
+        const ctx = this.ctx;
+
+        // Sky gradient from top to bottom
+        const skyGradient = ctx.createLinearGradient(0, 0, 0, height);
+        skyGradient.addColorStop(0, "#72c2f2");  // Lighter top
+        skyGradient.addColorStop(0.7, "#b3ecff"); // Mid
+        skyGradient.addColorStop(1, "#ffffff");  // Near horizon
+        ctx.fillStyle = skyGradient;
+        ctx.fillRect(0, 0, width, height);
+
+        // Green floor
+        const floorHeight = height * 0.3;
+        ctx.fillStyle = "#5cbb4e"; // Marsh/grass color
+        ctx.fillRect(0, height - floorHeight, width, floorHeight);
+      }
+
+      drawTrees() {
+        const { width, height } = this.canvas;
+        const ctx = this.ctx;
+        const treeCount = 5;
+        const floorHeight = height * 0.3;
+        // Simple tree placeholders
+        for (let i = 0; i < treeCount; i++) {
+          const x = (width / treeCount) * i + (width / treeCount) / 2;
+          const treeWidth = 20;
+          const treeHeight = 80;
+          const trunkHeight = 40;
+
+          // Trunk
+          ctx.fillStyle = "#8B4513";
+          ctx.fillRect(x - treeWidth / 4, height - floorHeight - trunkHeight, treeWidth / 2, trunkHeight);
+          // Foliage
+          ctx.beginPath();
+          ctx.fillStyle = "#228B22";
+          ctx.arc(x, height - floorHeight - trunkHeight, 30, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // Start the game when the window loads
+    window.onload = () => {
+      const canvas = document.getElementById("gameCanvas");
+      new Game(canvas);
+    };
+  </script>
+
+</body>
+
+</html>
