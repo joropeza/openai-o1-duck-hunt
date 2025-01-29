@@ -3,9 +3,9 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>Duck Hunt Marsh</title>
+  <title>Duck Hunt Marsh (Square)</title>
   <style>
-    /* Container to limit the width to 800px */
+    /* Container to limit width to 800px */
     .game-container {
       max-width: 800px;
       margin: 0 auto;
@@ -13,14 +13,12 @@
       position: relative;
     }
 
-    /* Canvas fills the container width */
+    /* Let JavaScript control the exact canvas dimensions for 1:1 aspect ratio */
     canvas {
       display: block;
       width: 100%;
-      /* Responsive to container */
-      height: auto;
       cursor: none;
-      /* Hide the default cursor so we can draw a crosshair */
+      /* We'll draw a custom crosshair */
     }
 
     body {
@@ -41,8 +39,6 @@
   <script>
     /** 
      * Gun class to handle aiming and firing.
-     * In a more complex game, this might handle the gun's state, 
-     * ammo count, recoil, etc.
      */
     class Gun {
       constructor() {
@@ -54,7 +50,6 @@
       }
 
       update(deltaTime) {
-        // If firing, count down the flash timer
         if (this.isFiring) {
           this.flashTimer -= deltaTime;
           if (this.flashTimer <= 0) {
@@ -65,7 +60,6 @@
       }
 
       fire() {
-        // Start flash
         this.isFiring = true;
         this.flashTimer = this.flashDuration;
       }
@@ -76,24 +70,20 @@
       }
 
       draw(ctx) {
-        // Draw crosshair
-        // If firing, crosshair color changes (e.g., red flash)
         ctx.save();
         ctx.strokeStyle = this.isFiring ? "red" : "black";
         ctx.lineWidth = 2;
 
-        // Lines forming a crosshair
         const size = 20;
+        // Crosshair lines
         ctx.beginPath();
-        // Horizontal line
         ctx.moveTo(this.x - size, this.y);
         ctx.lineTo(this.x + size, this.y);
-        // Vertical line
         ctx.moveTo(this.x, this.y - size);
         ctx.lineTo(this.x, this.y + size);
         ctx.stroke();
 
-        // Small circle at center
+        // Small circle in the center
         ctx.beginPath();
         ctx.arc(this.x, this.y, 5, 0, Math.PI * 2);
         ctx.stroke();
@@ -102,77 +92,123 @@
       }
     }
 
-    /** 
+    /**
+     * Duck class for creating and updating a flying duck with a sprite.
+     */
+    class Duck {
+      static duckImage = null;
+
+      constructor(canvasWidth, canvasHeight) {
+        // If you haven't loaded the image yet, load it once
+        if (!Duck.duckImage) {
+          Duck.duckImage = new Image();
+          Duck.duckImage.src = "https://seeklogo.com/images/D/Duck_Hunt-logo-8044A0A3B6-seeklogo.com.png";
+        }
+
+        // Randomly decide direction
+        // true => left->right, false => right->left
+        this.flyRight = Math.random() < 0.5;
+        const randomY = Math.random() * (canvasHeight - 60) + 30; // keep duck mostly in view
+
+        // Position
+        if (this.flyRight) {
+          // Start just off the left edge
+          this.x = -50;
+          this.vx = 0.3; // ~0.3px per ms => 300px/sec
+        } else {
+          // Start just off the right edge
+          this.x = canvasWidth + 50;
+          this.vx = -0.3;
+        }
+        this.y = randomY;
+        this.width = 50;
+        this.height = 50; // For collisions or scaling, if needed
+        this.alive = true; // Mark if the duck is active
+      }
+
+      update(deltaTime, canvasWidth) {
+        // Move horizontally
+        this.x += this.vx * deltaTime;
+
+        // If the duck has gone off screen, mark it inactive
+        if (this.flyRight && this.x > canvasWidth + 50) {
+          this.alive = false;
+        } else if (!this.flyRight && this.x < -100) {
+          this.alive = false;
+        }
+      }
+
+      draw(ctx) {
+        // If the image isn't loaded yet, do nothing
+        if (!Duck.duckImage.complete) return;
+
+        ctx.save();
+        if (!this.flyRight) {
+          // Flip horizontally if flying left
+          ctx.translate(this.x, this.y);
+          ctx.scale(-1, 1);
+          // Move the draw origin so the image is drawn at 0,0 post-scale
+          ctx.drawImage(Duck.duckImage, -this.width / 2, -this.height / 2, this.width, this.height);
+        } else {
+          // Flying right => no flip
+          ctx.translate(this.x, this.y);
+          ctx.drawImage(Duck.duckImage, -this.width / 2, -this.height / 2, this.width, this.height);
+        }
+        ctx.restore();
+      }
+    }
+
+    /**
      * Shell class (placeholder).
-     * In a bigger game, this would handle trajectories, collisions, etc.
      */
     class Shell {
       constructor() {
-        // Not used in this minimal example
+        // Not used here, but left for structure
       }
-      update(deltaTime) {
-        // ...
-      }
-      draw(ctx) {
-        // ...
-      }
+      update(deltaTime) { }
+      draw(ctx) { }
     }
 
     /** 
-     * Duck class (placeholder).
-     * For demonstration, we won't animate ducks, but you can expand this.
-     */
-    class Duck {
-      constructor() {
-        // ...
-      }
-      update(deltaTime) {
-        // ...
-      }
-      draw(ctx) {
-        // ...
-      }
-    }
-
-    /** 
-     * Main game object to organize logic:
-     * - Manages the canvas, input events, draws background, etc.
+     * Main Game class
      */
     class Game {
       constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext("2d");
-
-        // Keep track of last timestamp to compute deltaTime
         this.lastTime = 0;
 
-        // Create main entities
         this.gun = new Gun();
         this.shells = [];
         this.ducks = [];
 
-        // Mouse event listeners
+        // For duck spawning
+        this.duckSpawnTimer = 0;
+        this.nextDuckSpawnTime = this.randomSpawnTime(); // ms between 3 & 7s
+
         canvas.addEventListener("mousemove", (e) => this.onMouseMove(e));
         canvas.addEventListener("mousedown", (e) => this.onMouseDown(e));
 
-        // Resize the canvas to match the container
         this.resizeCanvas();
         window.addEventListener("resize", () => this.resizeCanvas());
 
-        // Start the loop
         requestAnimationFrame((time) => this.gameLoop(time));
       }
 
+      // Random spawn delay between 3s and 7s
+      randomSpawnTime() {
+        return 3000 + Math.random() * 4000;
+      }
+
       resizeCanvas() {
-        // Match canvas resolution to the displayed size
-        // This helps keep drawings sharp at different sizes
-        const rect = this.canvas.getBoundingClientRect();
-        this.canvas.width = rect.width;
-        this.canvas.height = rect.height;
+        const containerRect = this.canvas.parentNode.getBoundingClientRect();
+        // keep the canvas square
+        const size = containerRect.width;
+        this.canvas.width = size;
+        this.canvas.height = size;
       }
 
       onMouseMove(e) {
-        // Get mouse position relative to the canvas
         const rect = this.canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
@@ -180,13 +216,11 @@
       }
 
       onMouseDown(e) {
-        // Fire the gun (trigger the crosshair flash)
         this.gun.fire();
+        // In a real game, you might check if a duck was clicked, etc.
       }
 
-      // The main loop using requestAnimationFrame
       gameLoop(timestamp) {
-        // Calculate time elapsed since last frame
         const deltaTime = timestamp - this.lastTime;
         this.lastTime = timestamp;
 
@@ -197,28 +231,43 @@
       }
 
       update(deltaTime) {
-        // Update game entities
+        // Update gun
         this.gun.update(deltaTime);
 
-        // Shells, ducks, etc. if needed:
+        // Update duck spawn timing
+        this.duckSpawnTimer += deltaTime;
+        if (this.duckSpawnTimer >= this.nextDuckSpawnTime) {
+          this.spawnDuck();
+          this.duckSpawnTimer = 0;
+          this.nextDuckSpawnTime = this.randomSpawnTime();
+        }
+
+        // Update ducks
+        this.ducks.forEach(duck => duck.update(deltaTime, this.canvas.width));
+        // Remove ducks that have gone offscreen
+        this.ducks = this.ducks.filter(duck => duck.alive);
+
+        // Shells if needed
         this.shells.forEach(shell => shell.update(deltaTime));
-        this.ducks.forEach(duck => duck.update(deltaTime));
+      }
+
+      spawnDuck() {
+        const newDuck = new Duck(this.canvas.width, this.canvas.height);
+        this.ducks.push(newDuck);
       }
 
       draw() {
-        // Clear the canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        // Draw background (sky gradient + grass)
+        // Background
         this.drawBackground();
-
-        // Draw trees (simple placeholders)
+        // Trees
         this.drawTrees();
 
-        // Draw Ducks
+        // Ducks
         this.ducks.forEach(duck => duck.draw(this.ctx));
 
-        // Draw Gun crosshair
+        // Gun crosshair
         this.gun.draw(this.ctx);
       }
 
@@ -226,17 +275,17 @@
         const { width, height } = this.canvas;
         const ctx = this.ctx;
 
-        // Sky gradient from top to bottom
+        // Sky
         const skyGradient = ctx.createLinearGradient(0, 0, 0, height);
-        skyGradient.addColorStop(0, "#72c2f2");  // Lighter top
-        skyGradient.addColorStop(0.7, "#b3ecff"); // Mid
-        skyGradient.addColorStop(1, "#ffffff");  // Near horizon
+        skyGradient.addColorStop(0, "#72c2f2");
+        skyGradient.addColorStop(0.7, "#b3ecff");
+        skyGradient.addColorStop(1, "#ffffff");
         ctx.fillStyle = skyGradient;
         ctx.fillRect(0, 0, width, height);
 
         // Green floor
         const floorHeight = height * 0.3;
-        ctx.fillStyle = "#5cbb4e"; // Marsh/grass color
+        ctx.fillStyle = "#5cbb4e";
         ctx.fillRect(0, height - floorHeight, width, floorHeight);
       }
 
@@ -245,17 +294,17 @@
         const ctx = this.ctx;
         const treeCount = 5;
         const floorHeight = height * 0.3;
-        // Simple tree placeholders
+
         for (let i = 0; i < treeCount; i++) {
           const x = (width / treeCount) * i + (width / treeCount) / 2;
           const treeWidth = 20;
-          const treeHeight = 80;
           const trunkHeight = 40;
 
           // Trunk
           ctx.fillStyle = "#8B4513";
           ctx.fillRect(x - treeWidth / 4, height - floorHeight - trunkHeight, treeWidth / 2, trunkHeight);
-          // Foliage
+
+          // Simple foliage
           ctx.beginPath();
           ctx.fillStyle = "#228B22";
           ctx.arc(x, height - floorHeight - trunkHeight, 30, 0, Math.PI * 2);
@@ -264,7 +313,7 @@
       }
     }
 
-    // Start the game when the window loads
+    // Start the game
     window.onload = () => {
       const canvas = document.getElementById("gameCanvas");
       new Game(canvas);
