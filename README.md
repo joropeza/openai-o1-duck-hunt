@@ -25,3 +25,7 @@ Let's make a browser-based game using a single-page HTML file and JavaScript. Th
 ### Prompt 2
 
 Make the total canvas height be equal to its width. Then let's build out that duck class. Use this image <https://seeklogo.com/images/D/Duck_Hunt-logo-8044A0A3B6-seeklogo.com.png> of a duck flying to the right. Reverse the image if the duck is flying to the left. One duck should enter the screen at a random height every 3-7 seconds. The duck should enter at one edge of the screen and move fairly quickly towards the other side of the screen.
+
+### Prompt 3
+
+Ducks should always appear in the upper third of the canvas. Also, make them fly at a random speed, not too fast, not too slow.

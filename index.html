@@ -99,38 +99,40 @@
       static duckImage = null;
 
       constructor(canvasWidth, canvasHeight) {
-        // If you haven't loaded the image yet, load it once
+        // Load the duck image once as a static property
         if (!Duck.duckImage) {
           Duck.duckImage = new Image();
           Duck.duckImage.src = "https://seeklogo.com/images/D/Duck_Hunt-logo-8044A0A3B6-seeklogo.com.png";
         }
 
-        // Randomly decide direction
+        // Randomly decide flight direction:
         // true => left->right, false => right->left
         this.flyRight = Math.random() < 0.5;
-        const randomY = Math.random() * (canvasHeight - 60) + 30; // keep duck mostly in view
 
-        // Position
-        if (this.flyRight) {
-          // Start just off the left edge
-          this.x = -50;
-          this.vx = 0.3; // ~0.3px per ms => 300px/sec
-        } else {
-          // Start just off the right edge
-          this.x = canvasWidth + 50;
-          this.vx = -0.3;
-        }
-        this.y = randomY;
+        // Position the duck at a random Y in the top 1/3 of the canvas
+        const topThird = canvasHeight * 0.33;
+        this.y = 25 + Math.random() * (topThird - 50);
+        // e.g., 25px from top to (top-third - 25) so the duck won't clip
+
+        // Horizontal position just offscreen on either left or right
+        this.x = this.flyRight ? -50 : canvasWidth + 50;
+
+        // Give each duck a random speed between 0.2 and 0.4 px/ms (200–400 px/s)
+        const speed = 0.2 + Math.random() * 0.2;
+        this.vx = this.flyRight ? speed : -speed;
+
+        // Dimensions (for drawing and hit detection if needed)
         this.width = 50;
-        this.height = 50; // For collisions or scaling, if needed
-        this.alive = true; // Mark if the duck is active
+        this.height = 50;
+
+        this.alive = true; // Mark if this duck is still active on-screen
       }
 
       update(deltaTime, canvasWidth) {
         // Move horizontally
         this.x += this.vx * deltaTime;
 
-        // If the duck has gone off screen, mark it inactive
+        // If the duck has gone fully off-screen, mark it inactive
         if (this.flyRight && this.x > canvasWidth + 50) {
           this.alive = false;
         } else if (!this.flyRight && this.x < -100) {
@@ -143,17 +145,21 @@
         if (!Duck.duckImage.complete) return;
 
         ctx.save();
+        // Translate to the duck's position
+        ctx.translate(this.x, this.y);
+
         if (!this.flyRight) {
           // Flip horizontally if flying left
-          ctx.translate(this.x, this.y);
           ctx.scale(-1, 1);
-          // Move the draw origin so the image is drawn at 0,0 post-scale
-          ctx.drawImage(Duck.duckImage, -this.width / 2, -this.height / 2, this.width, this.height);
-        } else {
-          // Flying right => no flip
-          ctx.translate(this.x, this.y);
-          ctx.drawImage(Duck.duckImage, -this.width / 2, -this.height / 2, this.width, this.height);
         }
+        // Draw the duck so that its center is at (0,0) after transform
+        ctx.drawImage(
+          Duck.duckImage,
+          -this.width / 2,
+          -this.height / 2,
+          this.width,
+          this.height
+        );
         ctx.restore();
       }
     }
@@ -162,9 +168,7 @@
      * Shell class (placeholder).
      */
     class Shell {
-      constructor() {
-        // Not used here, but left for structure
-      }
+      constructor() { }
       update(deltaTime) { }
       draw(ctx) { }
     }
@@ -184,26 +188,27 @@
 
         // For duck spawning
         this.duckSpawnTimer = 0;
-        this.nextDuckSpawnTime = this.randomSpawnTime(); // ms between 3 & 7s
+        this.nextDuckSpawnTime = this.randomSpawnTime(); // ms between 3–7 s
 
+        // Mouse events
         canvas.addEventListener("mousemove", (e) => this.onMouseMove(e));
         canvas.addEventListener("mousedown", (e) => this.onMouseDown(e));
 
+        // Keep canvas square
         this.resizeCanvas();
         window.addEventListener("resize", () => this.resizeCanvas());
 
+        // Start loop
         requestAnimationFrame((time) => this.gameLoop(time));
       }
 
-      // Random spawn delay between 3s and 7s
       randomSpawnTime() {
-        return 3000 + Math.random() * 4000;
+        return 3000 + Math.random() * 4000; // 3,000 to 7,000 ms
       }
 
       resizeCanvas() {
         const containerRect = this.canvas.parentNode.getBoundingClientRect();
-        // keep the canvas square
-        const size = containerRect.width;
+        const size = containerRect.width; // keep the canvas square
         this.canvas.width = size;
         this.canvas.height = size;
       }
@@ -217,7 +222,7 @@
 
       onMouseDown(e) {
         this.gun.fire();
-        // In a real game, you might check if a duck was clicked, etc.
+        // Could check if crosshair hits a duck, etc.
       }
 
       gameLoop(timestamp) {
@@ -231,10 +236,10 @@
       }
 
       update(deltaTime) {
-        // Update gun
+        // Update gun flash
         this.gun.update(deltaTime);
 
-        // Update duck spawn timing
+        // Update spawn timing
         this.duckSpawnTimer += deltaTime;
         if (this.duckSpawnTimer >= this.nextDuckSpawnTime) {
           this.spawnDuck();
@@ -244,10 +249,10 @@
 
         // Update ducks
         this.ducks.forEach(duck => duck.update(deltaTime, this.canvas.width));
-        // Remove ducks that have gone offscreen
+        // Remove offscreen ducks
         this.ducks = this.ducks.filter(duck => duck.alive);
 
-        // Shells if needed
+        // Update shells (placeholder)
         this.shells.forEach(shell => shell.update(deltaTime));
       }
 
@@ -275,7 +280,7 @@
         const { width, height } = this.canvas;
         const ctx = this.ctx;
 
-        // Sky
+        // Sky gradient
         const skyGradient = ctx.createLinearGradient(0, 0, 0, height);
         skyGradient.addColorStop(0, "#72c2f2");
         skyGradient.addColorStop(0.7, "#b3ecff");
@@ -283,7 +288,7 @@
         ctx.fillStyle = skyGradient;
         ctx.fillRect(0, 0, width, height);
 
-        // Green floor
+        // Grass
         const floorHeight = height * 0.3;
         ctx.fillStyle = "#5cbb4e";
         ctx.fillRect(0, height - floorHeight, width, floorHeight);
@@ -304,7 +309,7 @@
           ctx.fillStyle = "#8B4513";
           ctx.fillRect(x - treeWidth / 4, height - floorHeight - trunkHeight, treeWidth / 2, trunkHeight);
 
-          // Simple foliage
+          // Foliage
           ctx.beginPath();
           ctx.fillStyle = "#228B22";
           ctx.arc(x, height - floorHeight - trunkHeight, 30, 0, Math.PI * 2);
