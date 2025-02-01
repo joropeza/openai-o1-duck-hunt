@@ -94,6 +94,9 @@
 
     /**
      * Duck class for creating and updating a flying duck with a sprite.
+     * Now includes a distance dimension, 30–200 ft.
+     * Ducks at 50 ft = original size (50×50). 
+     * Ducks at 200 ft are scaled smaller, at 30 ft are scaled bigger.
      */
     class Duck {
       static duckImage = null;
@@ -105,27 +108,35 @@
           Duck.duckImage.src = "https://seeklogo.com/images/D/Duck_Hunt-logo-8044A0A3B6-seeklogo.com.png";
         }
 
-        // Randomly decide flight direction:
+        // Random flight direction
         // true => left->right, false => right->left
         this.flyRight = Math.random() < 0.5;
 
         // Position the duck at a random Y in the top 1/3 of the canvas
         const topThird = canvasHeight * 0.33;
         this.y = 25 + Math.random() * (topThird - 50);
-        // e.g., 25px from top to (top-third - 25) so the duck won't clip
 
         // Horizontal position just offscreen on either left or right
         this.x = this.flyRight ? -50 : canvasWidth + 50;
 
-        // Give each duck a random speed between 0.2 and 0.4 px/ms (200–400 px/s)
+        // Choose a random speed between 0.2 and 0.4 px/ms (200–400 px/s)
         const speed = 0.2 + Math.random() * 0.2;
         this.vx = this.flyRight ? speed : -speed;
 
-        // Dimensions (for drawing and hit detection if needed)
-        this.width = 50;
-        this.height = 50;
+        // Choose a random distance between 30 and 200 feet
+        this.distance = 30 + Math.random() * 170;
 
-        this.alive = true; // Mark if this duck is still active on-screen
+        // Use the current size (50×50) for 50 ft.
+        // Scale proportionally at other distances:
+        // scale = referenceDist / distance => referenceDist=50 ft
+        // finalSize = 50 * scale
+        const baseSize = 50;
+        const referenceDist = 50; // feet
+        const scale = referenceDist / this.distance; // e.g. 50/200=0.25 => smaller
+        this.width = baseSize * scale;
+        this.height = baseSize * scale;
+
+        this.alive = true; // Mark if this duck is still active
       }
 
       update(deltaTime, canvasWidth) {
@@ -203,7 +214,8 @@
       }
 
       randomSpawnTime() {
-        return 3000 + Math.random() * 4000; // 3,000 to 7,000 ms
+        // 3,000 to 7,000 ms
+        return 3000 + Math.random() * 4000;
       }
 
       resizeCanvas() {
@@ -248,12 +260,12 @@
         }
 
         // Update ducks
-        this.ducks.forEach(duck => duck.update(deltaTime, this.canvas.width));
+        this.ducks.forEach((duck) => duck.update(deltaTime, this.canvas.width));
         // Remove offscreen ducks
-        this.ducks = this.ducks.filter(duck => duck.alive);
+        this.ducks = this.ducks.filter((duck) => duck.alive);
 
         // Update shells (placeholder)
-        this.shells.forEach(shell => shell.update(deltaTime));
+        this.shells.forEach((shell) => shell.update(deltaTime));
       }
 
       spawnDuck() {
@@ -270,7 +282,7 @@
         this.drawTrees();
 
         // Ducks
-        this.ducks.forEach(duck => duck.draw(this.ctx));
+        this.ducks.forEach((duck) => duck.draw(this.ctx));
 
         // Gun crosshair
         this.gun.draw(this.ctx);

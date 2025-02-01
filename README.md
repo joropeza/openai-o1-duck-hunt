@@ -29,3 +29,7 @@ Make the total canvas height be equal to its width. Then let's build out that du
 ### Prompt 3
 
 Ducks should always appear in the upper third of the canvas. Also, make them fly at a random speed, not too fast, not too slow.
+
+### Prompt 4
+
+Let's introduce a distance dimension. Each duck instance should have a distance from the shooter between 30 feet to 200 feet. Choose a distance for each instance at random. Scale the size of the duck so that ducks that are further away appear smaller. Use the current size for ducks that are 50 feet away. Ducks that are 200 feet away should be much smaller.
