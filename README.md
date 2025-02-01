@@ -33,3 +33,11 @@ Ducks should always appear in the upper third of the canvas. Also, make them fly
 ### Prompt 4
 
 Let's introduce a distance dimension. Each duck instance should have a distance from the shooter between 30 feet to 200 feet. Choose a distance for each instance at random. Scale the size of the duck so that ducks that are further away appear smaller. Use the current size for ducks that are 50 feet away. Ducks that are 200 feet away should be much smaller.
+
+### Prompt 5
+
+Firing the gun by clicking the mouse button should fire a shell. Each shell should travel in a straight line. Shells travel at 1,000 feet per second. When the shell reaches the same distance as a duck instance that's currently on the screen, decide if there is a hit by determining if the shell is within a 100 pixel radius of the location of the duck. If there is a hit, console.log "hit!".
+
+Here I had to make my first correction:
+
+Shells should not linger. They should be deleted once they have travelled 500 feet.
