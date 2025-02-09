@@ -1,6 +1,8 @@
 # openai-o1-duck-hunt
 
-Coding with ChatGPT using OpenAI's o1 model to make a Duck Hunt game
+Coding with ChatGPT using OpenAI's o1 model to make a Duck Hunt game.
+
+See the results here: [(https://jonoropeza.com/2025-openai-duck-hunt/](https://jonoropeza.com/2025-openai-duck-hunt/)
 
 ## The Prompts
 
