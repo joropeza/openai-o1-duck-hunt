@@ -38,6 +38,19 @@ Let's introduce a distance dimension. Each duck instance should have a distance 
 
 Firing the gun by clicking the mouse button should fire a shell. Each shell should travel in a straight line. Shells travel at 1,000 feet per second. When the shell reaches the same distance as a duck instance that's currently on the screen, decide if there is a hit by determining if the shell is within a 100 pixel radius of the location of the duck. If there is a hit, console.log "hit!".
 
-Here I had to make my first correction:
+_Here I had to make my first correction:_
 
 Shells should not linger. They should be deleted once they have travelled 500 feet.
+
+### Prompt 6
+
+_At this point, anything I prompted o1 to do next resulted in parts of the code being commented out like this:_
+
+```
+/**
+ * (Other classes omitted for brevity, but identical to the previous code)
+ * ...
+ */
+ ```
+
+_Attempts to coach o1 to put it back together failed; we never returned to working code beyond this point, and so I decided to declare the experiment complete._
