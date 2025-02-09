@@ -2,7 +2,9 @@
 
 Coding with ChatGPT using OpenAI's o1 model to make a Duck Hunt game.
 
-See the results here: [(https://jonoropeza.com/2025-openai-duck-hunt/](https://jonoropeza.com/2025-openai-duck-hunt/)
+Each commit in the blame represents the code written by o1 after given the prompts below.
+
+See the results here: [https://jonoropeza.com/2025-openai-duck-hunt/](https://jonoropeza.com/2025-openai-duck-hunt/)
 
 ## The Prompts
 
